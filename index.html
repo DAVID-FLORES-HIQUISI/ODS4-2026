@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuestionario Interactivo: ODS 4 - Educación 2030</title>
+  <style>
+    :root {
+      --primary: #0072bc;
+      --primary-dark: #005a96;
+      --accent: #28a745;
+      --danger: #dc3545;
+      --warning: #ffc107;
+      --bg: #f4f7f6;
+      --card-bg: #ffffff;
+      --text: #2c3e50;
+      --border-radius: 12px;
+      --box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 850px;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      padding: 35px;
+      position: relative;
+    }
+
+    /* Screen management */
+    .screen {
+      display: none;
+    }
+    .screen.active {
+      display: block;
+    }
+
+    /* Header & General UI */
+    h1 {
+      color: var(--primary);
+      margin-bottom: 15px;
+      font-size: 1.8rem;
+      text-align: center;
+    }
+    p.subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 25px;
+      font-size: 1.05rem;
+    }
+
+    /* Start Screen */
+    .start-card {
+      text-align: center;
+      padding: 20px 0;
+    }
+    .start-card ul {
+      text-align: left;
+      margin: 20px auto;
+      max-width: 550px;
+      list-style-type: none;
+    }
+    .start-card li {
+      margin-bottom: 12px;
+      padding-left: 28px;
+      position: relative;
+      line-height: 1.5;
+    }
+    .start-card li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    /* Quiz Screen */
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #edf2f7;
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      margin-bottom: 25px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--primary);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .question-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+    .option-btn {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 18px;
+      text-align: left;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .option-btn:hover {
+      background: #ebf8ff;
+      border-color: var(--primary);
+    }
+    .option-btn.selected {
+      background: #ebf8ff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(0, 114, 188, 0.2);
+    }
+    .option-btn .prefix {
+      font-weight: bold;
+      background: #e2e8f0;
+      color: #4a5568;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .option-btn.selected .prefix {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+    }
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+    .btn-secondary {
+      background: #cbd5e0;
+      color: #2d3748;
+    }
+    .btn-secondary:hover {
+      background: #a0aec0;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Results Screen */
+    .results-summary {
+      text-align: center;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+      border: 1px solid #e2e8f0;
+    }
+    .score-badge {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 10px 0;
+    }
+    .level-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    .level-excelente { background: #d4edda; color: #155724; }
+    .level-bueno { background: #cce5ff; color: #004085; }
+    .level-regular { background: #fff3cd; color: #856404; }
+    .level-necesita { background: #f8d7da; color: #721c24; }
+
+    /* Detailed Review */
+    .review-section {
+      margin-top: 30px;
+    }
+    .review-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 15px;
+      background: #fff;
+    }
+    .review-item.correct {
+      border-left: 5px solid var(--accent);
+    }
+    .review-item.incorrect {
+      border-left: 5px solid var(--danger);
+    }
+    .review-q-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .review-ans {
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+    .review-justification {
+      background: #f7fafc;
+      border-left: 3px solid #cbd5e0;
+      padding: 10px;
+      font-size: 0.9rem;
+      color: #4a5568;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .app-container { padding: 20px; }
+      .quiz-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .btn-group { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- PANTALLA INICIAL -->
+    <div id="start-screen" class="screen active">
+      <h1>Evaluación Educativa: ODS 4</h1>
+      <p class="subtitle">Declaración de Incheon y Marco de Acción Educación 2030</p>
+      
+      <div class="start-card">
+        <p>Bienvenido/a a la evaluación interactiva para medir su conocimiento sobre la Agenda de Educación 2030.</p>
+        <ul>
+          <li><strong>30 Preguntas:</strong> Selección múltiple con 4 opciones.</li>
+          <li><strong>Orden Aleatorio:</strong> El cuestionario se baraja automáticamente en cada intento.</li>
+          <li><strong>Evaluación Segura:</strong> Las soluciones y justificaciones se revelan únicamente al finalizar.</li>
+          <li><strong>Retroalimentación Completa:</strong> Obtendrá puntaje, porcentaje, diagnóstico de nivel y retroalimentación pedagógica detallada.</li>
+        </ul>
+        <button class="btn btn-primary" onclick="startQuiz()" style="font-size: 1.1rem; padding: 14px 32px; margin-top: 15px;">
+          Iniciar Cuestionario
+        </button>
+      </div>
+    </div>
+
+    <!-- PANTALLA DEL CUESTIONARIO -->
+    <div id="quiz-screen" class="screen">
+      <div class="quiz-header">
+        <span id="question-counter" style="font-weight: 600; color: #4a5568;">Pregunta 1 de 30</span>
+        <span id="category-tag" style="font-size: 0.85rem; background: #e2e8f0; padding: 4px 10px; border-radius: 12px; color: #4a5568;">ODS 4</span>
+      </div>
+      
+      <div class="progress-bar-container">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+
+      <div id="question-text" class="question-title">Cargando pregunta...</div>
+
+      <div class="options-grid" id="options-container">
+        <!-- Opciones generadas por JS -->
+      </div>
+
+      <div class="btn-group">
+        <button id="prev-btn" class="btn btn-secondary" onclick="prevQuestion()" disabled>Anterior</button>
+        <button id="next-btn" class="btn btn-primary" onclick="nextQuestion()">Siguiente</button>
+      </div>
+    </div>
+
+    <!-- PANTALLA DE RESULTADOS -->
+    <div id="results-screen" class="screen">
+      <h1>Resultado de la Evaluación</h1>
+      <p class="subtitle">Declaración de Incheon y Marco de Acción ODS 4 – Educación 2030</p>
+
+      <div class="results-summary">
+        <div id="level-badge" class="level-badge">Valoración</div>
+        <div id="score-text" class="score-badge">0 / 30</div>
+        <p id="percentage-text" style="font-size: 1.2rem; font-weight: 600; color: #4a5568;">Porcentaje: 0%</p>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 25px;">
+        <button class="btn btn-primary" onclick="startQuiz()">Intentar de Nuevo</button>
+      </div>
+
+      <div class="review-section">
+        <h2 style="font-size: 1.3rem; margin-bottom: 15px; color: var(--primary);">Revisión Detallada de Respuestas</h2>
+        <div id="review-container">
+          <!-- Items de revisión generados por JS -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Banco original de las 30 preguntas estructuradas
+    const rawQuestions = [
+      {
+        id: 1,
+        question: "¿En qué año se aprobó la Declaración de Incheon?",
+        options: ["1990", "2000", "2015", "2020"],
+        correctIndex: 2,
+        justification: "La Declaración de Incheon fue aprobada el 21 de mayo de 2015, durante el Foro Mundial sobre la Educación realizado en Incheon, República de Corea."
+      },
+      {
+        id: 2,
+        question: "¿Qué organización lideró la convocatoria del Foro Mundial sobre la Educación 2015?",
+        options: ["UNICEF", "UNESCO", "Organización Internacional del Trabajo", "Banco Mundial"],
+        correctIndex: 1,
+        justification: "La UNESCO impulsó y lideró la convocatoria del Foro Mundial sobre la Educación 2015, que permitió establecer los compromisos de Educación 2030."
+      },
+      {
+        id: 3,
+        question: "¿Cuál es el propósito fundamental del Objetivo de Desarrollo Sostenible 4?",
+        options: [
+          "Incrementar exclusivamente la educación universitaria.",
+          "Garantizar una educación inclusiva, equitativa y de calidad y promover oportunidades de aprendizaje durante toda la vida para todos.",
+          "Priorizar únicamente la educación técnica y tecnológica.",
+          "Eliminar los procesos de evaluación educativa."
+        ],
+        correctIndex: 1,
+        justification: "El ODS 4 plantea garantizar el derecho a una educación inclusiva, equitativa y de calidad, promoviendo oportunidades de aprendizaje permanente."
+      },
+      {
+        id: 4,
+        question: "¿Hasta qué año se proyecta el cumplimiento de las metas de Educación 2030?",
+        options: ["2020", "2025", "2030", "2040"],
+        correctIndex: 2,
+        justification: "La Agenda 2030 establece compromisos internacionales para alcanzar los Objetivos de Desarrollo Sostenible, incluido el ODS 4."
+      },
+      {
+        id: 5,
+        question: "¿Qué significa que la educación sea inclusiva?",
+        options: [
+          "Atender únicamente a estudiantes con mejores calificaciones.",
+          "Garantizar que todas las personas tengan oportunidades de acceso, participación y aprendizaje, sin exclusión.",
+          "Separar a los estudiantes según sus capacidades económicas.",
+          "Priorizar exclusivamente a los estudiantes de áreas urbanas."
+        ],
+        correctIndex: 1,
+        justification: "La inclusión busca eliminar las barreras que impiden que las personas participen y aprendan en igualdad de condiciones."
+      },
+      {
+        id: 6,
+        question: "¿Qué establece principalmente la meta 4.1?",
+        options: [
+          "Garantizar que niñas y niños culminen la educación primaria y secundaria gratuita, equitativa y de calidad.",
+          "Incrementar las becas universitarias.",
+          "Fortalecer exclusivamente la formación de docentes.",
+          "Promover únicamente la educación de adultos."
+        ],
+        correctIndex: 0,
+        justification: "La meta 4.1 busca que todos los niños y niñas terminen la enseñanza primaria y secundaria con resultados de aprendizaje pertinentes y eficaces."
+      },
+      {
+        id: 7,
+        question: "¿Qué aspecto contempla la meta 4.2?",
+        options: [
+          "La educación universitaria.",
+          "La formación técnica de adultos.",
+          "La atención y el desarrollo de la primera infancia y la educación preescolar de calidad.",
+          "La capacitación laboral de jóvenes."
+        ],
+        correctIndex: 2,
+        justification: "Esta meta busca que todos los niños y niñas accedan a servicios de atención y desarrollo en la primera infancia y a una enseñanza preescolar de calidad."
+      },
+      {
+        id: 8,
+        question: "¿Qué busca garantizar la meta 4.3?",
+        options: [
+          "La formación exclusivamente primaria.",
+          "El acceso en condiciones de igualdad a la formación técnica, profesional y superior.",
+          "La eliminación de la educación universitaria.",
+          "La capacitación exclusiva de trabajadores públicos."
+        ],
+        correctIndex: 1,
+        justification: "La meta 4.3 promueve el acceso igualitario de hombres y mujeres a una formación técnica, profesional y superior de calidad."
+      },
+      {
+        id: 9,
+        question: "¿Cuál es el propósito de la meta 4.4?",
+        options: [
+          "Incrementar las competencias técnicas y profesionales para acceder al empleo, al trabajo decente y al emprendimiento.",
+          "Eliminar la formación profesional.",
+          "Priorizar únicamente la educación primaria.",
+          "Reducir las oportunidades laborales de los jóvenes."
+        ],
+        correctIndex: 0,
+        justification: "La meta busca aumentar las competencias necesarias para que jóvenes y adultos puedan incorporarse al mundo laboral y desarrollar emprendimientos."
+      },
+      {
+        id: 10,
+        question: "¿Qué problemática busca eliminar la meta 4.5?",
+        options: [
+          "La participación de los padres de familia.",
+          "Las evaluaciones de aprendizaje.",
+          "Las disparidades de género y las desigualdades que afectan a personas vulnerables.",
+          "La formación técnica y profesional."
+        ],
+        correctIndex: 2,
+        justification: "La meta 4.5 busca garantizar igualdad de acceso a la educación para personas con discapacidad, pueblos indígenas y otros grupos en situación de vulnerabilidad."
+      },
+      {
+        id: 11,
+        question: "¿Qué capacidades pretende desarrollar la meta 4.6?",
+        options: [
+          "Lectura, escritura y aritmética básica.",
+          "Únicamente conocimientos tecnológicos avanzados.",
+          "Competencias deportivas.",
+          "Habilidades de administración empresarial."
+        ],
+        correctIndex: 0,
+        justification: "La meta 4.6 busca garantizar que jóvenes y una proporción considerable de adultos estén alfabetizados y tengan nociones elementales de aritmética."
+      },
+      {
+        id: 12,
+        question: "¿Qué contenidos educativos promueve la meta 4.7?",
+        options: [
+          "Únicamente conocimientos científicos.",
+          "Desarrollo sostenible, derechos humanos, igualdad de género, cultura de paz y ciudadanía mundial.",
+          "Exclusivamente formación empresarial.",
+          "Solamente contenidos tecnológicos."
+        ],
+        correctIndex: 1,
+        justification: "La meta 4.7 busca que los estudiantes adquieran conocimientos y prácticas que contribuyan al desarrollo sostenible, la paz y la valoración de la diversidad cultural."
+      },
+      {
+        id: 13,
+        question: "¿Qué busca principalmente la meta 4.a?",
+        options: [
+          "Incrementar la cantidad de estudiantes por aula.",
+          "Construir y adecuar instalaciones educativas seguras, inclusivas y eficaces para todos.",
+          "Eliminar los espacios recreativos.",
+          "Reducir la infraestructura educativa."
+        ],
+        correctIndex: 1,
+        justification: "La meta 4.a plantea disponer de instalaciones educativas que consideren las necesidades de los niños, las personas con discapacidad y las diferencias de género."
+      },
+      {
+        id: 14,
+        question: "¿Cuál de los siguientes elementos forma parte de las condiciones consideradas en la meta 4.a?",
+        options: [
+          "Acceso a electricidad e Internet con fines pedagógicos.",
+          "Instalación de oficinas comerciales.",
+          "Construcción de centros de entretenimiento.",
+          "Implementación de estacionamientos privados."
+        ],
+        correctIndex: 0,
+        justification: "El indicador de esta meta contempla electricidad, Internet, computadoras, agua potable, saneamiento y materiales adaptados para estudiantes con discapacidad, entre otros aspectos."
+      },
+      {
+        id: 15,
+        question: "¿Qué finalidad tiene la meta 4.b?",
+        options: [
+          "Incrementar las becas para estudiantes de países en desarrollo que desean acceder a estudios superiores.",
+          "Reducir las oportunidades de formación profesional.",
+          "Eliminar los programas de intercambio académico.",
+          "Limitar el acceso a la educación técnica."
+        ],
+        correctIndex: 0,
+        justification: "La meta 4.b busca aumentar las becas disponibles para estudiantes de países en desarrollo, facilitando el acceso a programas de educación superior, formación técnica y profesional."
+      },
+      {
+        id: 16,
+        question: "¿Qué busca alcanzar la meta 4.c?",
+        options: [
+          "Disminuir la cantidad de docentes.",
+          "Sustituir a los maestros por herramientas digitales.",
+          "Aumentar considerablemente la oferta de docentes calificados.",
+          "Eliminar la formación inicial de maestros."
+        ],
+        correctIndex: 2,
+        justification: "La meta 4.c establece la necesidad de incrementar la oferta de docentes calificados mediante la formación, capacitación y cooperación internacional."
+      },
+      {
+        id: 17,
+        question: "¿Quiénes tienen la responsabilidad principal de garantizar el derecho a la educación?",
+        options: [
+          "Exclusivamente los padres de familia.",
+          "Los gobiernos.",
+          "Las empresas privadas.",
+          "Solamente los estudiantes."
+        ],
+        correctIndex: 1,
+        justification: "El Marco de Acción reconoce a los gobiernos como responsables principales de garantizar el derecho a la educación y conducir la aplicación de la agenda."
+      },
+      {
+        id: 18,
+        question: "¿Por qué es importante la recopilación de datos y el seguimiento educativo?",
+        options: [
+          "Para reemplazar el trabajo pedagógico.",
+          "Para evitar la participación de los docentes.",
+          "Para fundamentar políticas, evaluar avances y fortalecer la rendición de cuentas.",
+          "Para eliminar los procesos de planificación."
+        ],
+        correctIndex: 2,
+        justification: "El documento plantea desarrollar sistemas de seguimiento y evaluación que generen datos sólidos para la formulación de políticas y la gestión educativa."
+      },
+      {
+        id: 19,
+        question: "¿Qué característica deben tener las estrategias indicativas propuestas en el Marco de Acción?",
+        options: [
+          "Deben aplicarse exactamente de la misma manera en todos los países.",
+          "Deben adaptarse a los contextos y prioridades de cada país.",
+          "Deben utilizarse exclusivamente en educación superior.",
+          "No pueden modificarse bajo ninguna circunstancia."
+        ],
+        correctIndex: 1,
+        justification: "El documento señala que las estrategias son generales y que cada gobierno debe adaptarlas según su realidad, contexto y prioridades."
+      },
+      {
+        id: 20,
+        question: "¿Qué significa el aprendizaje a lo largo de toda la vida?",
+        options: [
+          "Aprender únicamente durante la educación primaria.",
+          "Acceder a oportunidades de aprendizaje en todas las etapas de la vida.",
+          "Estudiar exclusivamente hasta concluir la secundaria.",
+          "Recibir capacitación solamente antes de los 18 años."
+        ],
+        correctIndex: 1,
+        justification: "Educación 2030 promueve oportunidades de aprendizaje permanente para todas las personas, independientemente de su edad o condición."
+      },
+      {
+        id: 21,
+        question: "¿Qué importancia tiene la gobernanza en la aplicación del ODS 4?",
+        options: [
+          "Organizar responsabilidades, coordinación y rendición de cuentas.",
+          "Eliminar la participación de los actores educativos.",
+          "Concentrar todas las decisiones en los estudiantes.",
+          "Sustituir la planificación por acciones improvisadas."
+        ],
+        correctIndex: 0,
+        justification: "La gobernanza permite organizar y coordinar las responsabilidades de los diferentes actores para garantizar la aplicación efectiva de las políticas educativas."
+      },
+      {
+        id: 22,
+        question: "¿Qué se busca mediante el establecimiento de alianzas eficaces e inclusivas?",
+        options: [
+          "Evitar la cooperación entre instituciones.",
+          "Transferir toda la responsabilidad educativa a las familias.",
+          "Coordinar esfuerzos entre gobiernos, organizaciones y otros actores para alcanzar las metas educativas.",
+          "Limitar la participación de la sociedad civil."
+        ],
+        correctIndex: 2,
+        justification: "El Marco de Acción destaca la importancia de la colaboración entre gobiernos, organizaciones internacionales, sociedad civil y otros sectores."
+      },
+      {
+        id: 23,
+        question: "¿Qué orientación plantea el documento respecto a la financiación educativa?",
+        options: [
+          "Reducir progresivamente la inversión educativa.",
+          "Movilizar recursos suficientes y utilizarlos de manera eficiente y equitativa.",
+          "Financiar exclusivamente la educación superior.",
+          "Depender únicamente de donaciones privadas."
+        ],
+        correctIndex: 1,
+        justification: "El Marco de Acción señala la necesidad de movilizar recursos para financiar adecuadamente la educación y garantizar la sostenibilidad de los sistemas educativos."
+      },
+      {
+        id: 24,
+        question: "Una unidad educativa identifica que algunos estudiantes con discapacidad no pueden acceder adecuadamente a sus aulas. ¿Qué meta del ODS 4 debe orientar las acciones institucionales?",
+        options: ["Meta 4.2", "Meta 4.3", "Meta 4.a", "Meta 4.b"],
+        correctIndex: 2,
+        justification: "Esta meta establece la necesidad de contar con instalaciones accesibles, seguras e inclusivas que respondan a las necesidades de todos los estudiantes."
+      },
+      {
+        id: 25,
+        question: "Una institución educativa desarrolla talleres de gastronomía, electrónica y sistemas informáticos para fortalecer las capacidades laborales de sus estudiantes. ¿Qué meta se relaciona directamente con esta acción?",
+        options: ["Meta 4.4", "Meta 4.2", "Meta 4.6", "Meta 4.a"],
+        correctIndex: 0,
+        justification: "La meta 4.4 busca desarrollar competencias técnicas y profesionales que faciliten el acceso al empleo, al trabajo decente y al emprendimiento."
+      },
+      {
+        id: 26,
+        question: "Una unidad educativa implementa actividades de lectura, escritura y razonamiento matemático para mejorar los aprendizajes de sus estudiantes. ¿Con qué meta se relaciona principalmente esta acción?",
+        options: ["Meta 4.1", "Meta 4.6", "Meta 4.b", "Meta 4.c"],
+        correctIndex: 1,
+        justification: "La meta 4.6 promueve el desarrollo de competencias de lectura, escritura y aritmética, fundamentales para la alfabetización."
+      },
+      {
+        id: 27,
+        question: "Una institución educativa desarrolla proyectos sobre igualdad de género, respeto a la diversidad cultural, derechos humanos y convivencia pacífica. ¿Qué meta está fortaleciendo?",
+        options: ["Meta 4.3", "Meta 4.4", "Meta 4.7", "Meta 4.b"],
+        correctIndex: 2,
+        justification: "La meta 4.7 incorpora la educación para el desarrollo sostenible, los derechos humanos, la igualdad de género, la cultura de paz y la ciudadanía mundial."
+      },
+      {
+        id: 28,
+        question: "Una dirección educativa organiza procesos de capacitación y actualización permanente para mejorar las competencias profesionales de sus maestros. ¿Qué meta se relaciona directamente con esta finalidad?",
+        options: ["Meta 4.c", "Meta 4.2", "Meta 4.5", "Meta 4.b"],
+        correctIndex: 0,
+        justification: "La meta 4.c busca incrementar la oferta de docentes calificados mediante la formación y capacitación docente."
+      },
+      {
+        id: 29,
+        question: "¿Cuál de las siguientes acciones responde mejor al principio de equidad educativa?",
+        options: [
+          "Brindar las mismas condiciones a todos los estudiantes sin considerar sus necesidades.",
+          "Atender únicamente a los estudiantes con mejores resultados académicos.",
+          "Identificar las dificultades de los estudiantes y proporcionar apoyos diferenciados para garantizar oportunidades de aprendizaje.",
+          "Separar a los estudiantes según su rendimiento académico."
+        ],
+        correctIndex: 2,
+        justification: "La equidad implica reconocer las diferencias y necesidades de los estudiantes para brindar oportunidades justas de acceso, permanencia y aprendizaje."
+      },
+      {
+        id: 30,
+        question: "¿Cuál es el mensaje fundamental de la Declaración de Incheon y del Marco de Acción Educación 2030?",
+        options: [
+          "La educación debe concentrarse únicamente en preparar estudiantes para el empleo.",
+          "La educación es un derecho humano fundamental y un instrumento para transformar vidas, promover la paz y alcanzar el desarrollo sostenible.",
+          "La educación debe priorizar exclusivamente la infraestructura escolar.",
+          "La responsabilidad educativa corresponde únicamente a los maestros."
+        ],
+        correctIndex: 1,
+        justification: "La Declaración de Incheon reafirma el compromiso mundial de transformar vidas mediante una educación inclusiva, equitativa, de calidad y con oportunidades de aprendizaje durante toda la vida."
+      }
+    ];
+
+    // State Variables
+    let currentQuestions = [];
+    let userAnswers = {};
+    let currentIndex = 0;
+
+    // Helper: Shuffle Array (Fisher-Yates)
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Switch Screens
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+    }
+
+    // Start / Restart Quiz
+    function startQuiz() {
+      currentQuestions = shuffleArray(rawQuestions);
+      userAnswers = {};
+      currentIndex = 0;
+      showScreen('quiz-screen');
+      renderQuestion();
+    }
+
+    // Render Current Question
+    function renderQuestion() {
+      const q = currentQuestions[currentIndex];
+      const letters = ['A', 'B', 'C', 'D'];
+
+      document.getElementById('question-counter').innerText = `Pregunta ${currentIndex + 1} de ${currentQuestions.length}`;
+      document.getElementById('question-text').innerText = `${currentIndex + 1}. ${q.question}`;
+      
+      // Update progress bar
+      const progressPercent = ((currentIndex + 1) / currentQuestions.length) * 100;
+      document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+      // Render Options
+      const container = document.getElementById('options-container');
+      container.innerHTML = '';
+
+      q.options.forEach((optText, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        if (userAnswers[currentIndex] === index) {
+          btn.classList.add('selected');
+        }
+        btn.onclick = () => selectOption(index);
+        
+        btn.innerHTML = `
+          <span class="prefix">${letters[index]}</span>
+          <span>${optText}</span>
+        `;
+        container.appendChild(btn);
+      });
+
+      // Update Navigation Buttons
+      document.getElementById('prev-btn').disabled = (currentIndex === 0);
+      
+      const nextBtn = document.getElementById('next-btn');
+      if (currentIndex === currentQuestions.length - 1) {
+        nextBtn.innerText = 'Finalizar Evaluacion';
+      } else {
+        nextBtn.innerText = 'Siguiente';
+      }
+    }
+
+    // Select Option
+    function selectOption(index) {
+      userAnswers[currentIndex] = index;
+      renderQuestion();
+    }
+
+    // Next Question or Finish
+    function nextQuestion() {
+      if (currentIndex < currentQuestions.length - 1) {
+        currentIndex++;
+        renderQuestion();
+      } else {
+        finishQuiz();
+      }
+    }
+
+    // Previous Question
+    function prevQuestion() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderQuestion();
+      }
+    }
+
+    // Calculate Score & Show Results
+    function finishQuiz() {
+      let score = 0;
+      const letters = ['A', 'B', 'C', 'D'];
+
+      currentQuestions.forEach((q, idx) => {
+        if (userAnswers[idx] === q.correctIndex) {
+          score++;
+        }
+      });
+
+      const percentage = Math.round((score / currentQuestions.length) * 100);
+
+      // Determine Valuation Level
+      let levelText = "";
+      let levelClass = "";
+
+      if (percentage >= 90) {
+        levelText = "Excelente";
+        levelClass = "level-excelente";
+      } else if (percentage >= 75) {
+        levelText = "Bueno";
+        levelClass = "level-bueno";
+      } else if (percentage >= 60) {
+        levelText = "Regular";
+        levelClass = "level-regular";
+      } else {
+        levelText = "Necesita reforzamiento";
+        levelClass = "level-necesita";
+      }
+
+      // Display Summary
+      document.getElementById('score-text').innerText = `${score} / ${currentQuestions.length}`;
+      document.getElementById('percentage-text').innerText = `Porcentaje obtenido: ${percentage}%`;
+      
+      const badgeElem = document.getElementById('level-badge');
+      badgeElem.innerText = `Nivel: ${levelText}`;
+      badgeElem.className = `level-badge ${levelClass}`;
+
+      // Build Detailed Review
+      const reviewContainer = document.getElementById('review-container');
+      reviewContainer.innerHTML = '';
+
+      currentQuestions.forEach((q, idx) => {
+        const userChoice = userAnswers[idx];
+        const isCorrect = userChoice === q.correctIndex;
+        const item = document.createElement('div');
+        item.className = `review-item ${isCorrect ? 'correct' : 'incorrect'}`;
+
+        const userAnsStr = userChoice !== undefined 
+          ? `${letters[userChoice]}) ${q.options[userChoice]}`
+          : '<em>No respondida</em>';
+        
+        const correctAnsStr = `${letters[q.correctIndex]}) ${q.options[q.correctIndex]}`;
+
+        item.innerHTML = `
+          <div class="review-q-title">${idx + 1}. ${q.question}</div>
+          <div class="review-ans"><strong>Tu respuesta:</strong> ${userAnsStr} ${isCorrect ? '✓ (Correcta)' : '✗ (Incorrecta)'}</div>
+          ${!isCorrect ? `<div class="review-ans" style="color: var(--accent);"><strong>Respuesta correcta:</strong> ${correctAnsStr}</div>` : ''}
+          <div class="review-justification">
+            <strong>Justificación:</strong> ${q.justification}
+          </div>
+        `;
+        reviewContainer.appendChild(item);
+      });
+
+      showScreen('results-screen');
+    }
+  </script>
+</body>
+</html>
